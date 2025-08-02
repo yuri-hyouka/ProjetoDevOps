@@ -1,3 +1,6 @@
 ---
-- host: app_server
+- hosts: app_server
   become: yes
+  roles:
+    - docker
+    

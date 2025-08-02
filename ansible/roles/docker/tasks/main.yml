@@ -1,0 +1,61 @@
+---
+  - name: "Atualizando repositório"
+    ansible.builtin.apt:
+      update_cache: yes
+    register: apt_result
+
+  - name: Exibe saída do apt
+    debug:
+      msg: "{{ apt_result.stderr if apt_result.stderr is defined else 'Nenhum stderr retornado.' }}"
+
+  # Instalação de pacotes
+  - name: "Instalando dependências"
+    ansible.builtin.apt:
+      pkg:
+      - ca-certificates
+      - curl
+      - lsb-release
+
+  - name: "Criar diretório para armazenar a chave de verificação"
+    ansible.builtin.file:
+      state: directory
+      path: /etc/apt/keyrings
+      mode: '0755'
+      owner: root
+      group: root
+
+  - name: "Baixar a chave GPG do repositório do Debian E aplica a permissão para que todos usuários tenham permissão de leitura"
+    ansible.builtin.get_url:
+      dest: /etc/apt/keyrings/docker.asc
+      url: https://download.docker.com/linux/debian/gpg
+      mode: '0644'
+      owner: root
+      group: root
+
+  - name: "Adiciona o repositório oficial do Docker"
+    ansible.builtin.apt_repository:
+      repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable"
+      filename: docker
+      state: present
+
+  # Coloquei a atualização do repositório separada por que houve problema na etapa acima
+  - name: "Atualizar repositório após inclusão do repositório Docker"
+    ansible.builtin.apt:
+      update_cache: yes
+    register: apt_result
+
+  # Debugando o resultado da atualização do repositório
+  - name: Exibe saída do apt
+    debug:
+      msg: "{{ apt_result.stderr if apt_result.stderr is defined else 'Nenhum stderr retornado.' }}"
+
+  # Instalação do Docker
+  - name: "Instalando os pacotes do Docker"
+    ansible.builtin.apt:
+      pkg:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      state: present

@@ -43,4 +43,4 @@ terraform.rc
 # End of https://www.toptal.com/developers/gitignore/api/ansible,terraform
 
 # Chave AWS
-.pem
+iac-alura.pem

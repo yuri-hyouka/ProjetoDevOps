@@ -1,0 +1,2 @@
+[app_server]
+23.22.42.163 ansible_user=admin ansible_ssh_private_key_file='/home/hyouka/ProjetoDevOps/iac.alura.pem'

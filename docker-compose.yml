@@ -1,0 +1,42 @@
+# Define a versão do Docker Compose. '3.8' é uma versão moderna e estável.
+version: '3.8'
+
+# Define os serviços (contêineres) que compõem sua aplicação.
+services:
+  # Serviço da sua aplicação Flask
+  app:
+    image: yuripaixao/hc-devops:latest
+    container_name: hc-app
+    # Garante que o contêiner reinicie automaticamente em caso de falha ou reboot do servidor.
+    restart: always
+    # Mapeia a porta 5000 do host para a porta 5000 do contêiner.
+    ports:
+      - "5000:5000"
+    # Define variáveis de ambiente para o contêiner da aplicação.
+    environment:
+      # O host do Redis agora é o nome do serviço 'redis', que é resolvido pela rede interna do Docker.
+      REDIS_HOST: redis
+    # Garante que o serviço 'redis' seja iniciado antes do serviço 'app'.
+    depends_on:
+      - redis
+
+  # Serviço do Redis
+  redis:
+    image: "redis:7-alpine"
+    container_name: hc-redis
+    restart: always
+    # Mapeia o volume nomeado 'redis-data' para o diretório onde o Redis armazena seus dados dentro do contêiner.
+    volumes:
+      - redis-data:/data
+
+# Define os volumes nomeados usados no compose.
+volumes:
+  redis-data:
+    # O driver 'local' é o padrão e significa que o Docker gerencia o volume no host.
+    driver: local
+
+
+#Logar no Docker HUB: docker login
+#Taguear a Imagem: docker tag hc-devops yuripaixao/hc-devops:latest
+#Pushar a Imagem: docker push yuripaixao/hc-devops:latest
+

@@ -48,7 +48,7 @@ jobs:
           # Usa o docker-compose para criar o ambiente de teste.
           # Ele usará a imagem local 'yuripaixao/hc-devops:latest' que acabamos de buildar.
           # O docker-compose gerencia a rede entre a app e o redis automaticamente.
-          docker-compose up -d
+          docker compose up -d
 
           echo "Aguardando a aplicação iniciar..."
           for i in {1..10}; do
@@ -57,7 +57,7 @@ jobs:
             # O endpoint /health retorna 200 para UP (sucesso) e 503 para DOWN (falha).
             if curl -sf http://localhost:5000/health; then
               echo "Health check OK! O teste passou."
-              docker-compose down
+              docker compose down
               exit 0
             fi
             echo "Tentativa $i falhou. Aguardando 2 segundos..."
@@ -65,8 +65,8 @@ jobs:
           done
           
           echo "Health check falhou após várias tentativas."
-          docker-compose logs
-          docker-compose down
+          docker compose logs
+          docker compose down
           exit 1
 
       - name: Push da imagem para o Docker Hub

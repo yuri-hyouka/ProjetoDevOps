@@ -7,17 +7,6 @@ on:
 jobs:
   build-test-and-push:
     runs-on: ubuntu-latest
-    # Define um serviço Redis que estará disponível para os steps deste job.
-    # O GitHub Actions criará uma rede para este job e o serviço redis.
-    services:
-      redis:
-        image: redis:7-alpine
-        # Opção para garantir que o serviço redis esteja pronto antes de prosseguir.
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout do código
@@ -53,16 +42,22 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Rodar container e testar a aplicação
+      - name: Testar a aplicação com Docker Compose
         run: |
           echo "Iniciando teste de integração com a imagem..."
-          docker run -d --rm --name hc-app -p 5000:5000 -e REDIS_HOST=redis --network ${{ job.services.redis.network }} yuripaixao/hc-devops:latest
+          # Usa o docker-compose para criar o ambiente de teste.
+          # Ele usará a imagem local 'yuripaixao/hc-devops:latest' que acabamos de buildar.
+          # O docker-compose gerencia a rede entre a app e o redis automaticamente.
+          docker-compose up -d
 
           echo "Aguardando a aplicação iniciar..."
           for i in {1..10}; do
-            if curl -s -f http://localhost:5000/health | grep '"status": "UP"'; then
+            # A verificação do health check é simplificada.
+            # curl -f falha (retorna não-zero) se o status HTTP for >= 400.
+            # O endpoint /health retorna 200 para UP (sucesso) e 503 para DOWN (falha).
+            if curl -sf http://localhost:5000/health; then
               echo "Health check OK! O teste passou."
-              docker stop hc-app
+              docker-compose down
               exit 0
             fi
             echo "Tentativa $i falhou. Aguardando 2 segundos..."
@@ -70,8 +65,8 @@ jobs:
           done
           
           echo "Health check falhou após várias tentativas."
-          docker logs hc-app
-          docker stop hc-app
+          docker-compose logs
+          docker-compose down
           exit 1
 
       - name: Push da imagem para o Docker Hub

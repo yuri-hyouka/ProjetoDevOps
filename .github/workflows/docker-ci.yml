@@ -1,16 +1,30 @@
-name: CI - Build and Push Docker Image
+name: CI - Build, Test and Push Docker Image
 
 on:
   push:
-    branches: [main]  # Roda somente na branch main
+    branches: [ main ]
 
 jobs:
-  build-and-push:
+  build-test-and-push:
     runs-on: ubuntu-latest
+    # Define um serviço Redis que estará disponível para os steps deste job.
+    # O GitHub Actions criará uma rede para este job e o serviço redis.
+    services:
+      redis:
+        image: redis:7-alpine
+        # Opção para garantir que o serviço redis esteja pronto antes de prosseguir.
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login no Docker Hub
         uses: docker/login-action@v3
@@ -18,17 +32,49 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build da imagem Docker
+      - name: Extrair metadados para Docker (tags e labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: yuripaixao/hc-devops
+          # Cria duas tags: uma com o SHA do commit e 'latest' para a branch main
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build da imagem Docker (sem push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # Constrói a imagem e a carrega no daemon do Docker local para ser testada.
+          load: true
+          # Não envia para o registry ainda.
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Rodar container e testar a aplicação
         run: |
-          docker build -t yuripaixao/hc-devops:latest .
+          echo "Iniciando teste de integração com a imagem..."
+          docker run -d --rm --name hc-app -p 5000:5000 -e REDIS_HOST=redis --network ${{ job.services.redis.network }} yuripaixao/hc-devops:latest
+
+          echo "Aguardando a aplicação iniciar..."
+          for i in {1..10}; do
+            if curl -s -f http://localhost:5000/health | grep '"status": "UP"'; then
+              echo "Health check OK! O teste passou."
+              docker stop hc-app
+              exit 0
+            fi
+            echo "Tentativa $i falhou. Aguardando 2 segundos..."
+            sleep 2
+          done
           
-      - name: Rodar container e testar rota /health 
-        run: |
-          docker run -d --rm --name hc-app -p 5000:5000 yuripaixao/hc-devops:latest
-          sleep 5 # tempo para a aplicação subir
-          #curl -f http://localhost:5000/health # comentado, como o reddis está down o retorno é 503 e vai quebrar o pipeline
+          echo "Health check falhou após várias tentativas."
+          docker logs hc-app
           docker stop hc-app
+          exit 1
 
       - name: Push da imagem para o Docker Hub
-        run: |
-          docker push yuripaixao/hc-devops:latest
+        # Este passo só roda se o passo de teste for bem-sucedido
+        if: success()
+        run: docker push --all-tags yuripaixao/hc-devops

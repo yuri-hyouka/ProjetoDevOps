@@ -86,19 +86,15 @@ jobs:
 
       - name: Configure SSH Key
         run: |
-          touch /tmp/teste
-          sudo su
           mkdir -p ~/.ssh/
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-      # - name: Deploy to EC2 via SSH
-      #   run: |
-      #     sudo su
-      #     # Copia o arquivo docker-compose.yml para um diretório temporário no servidor
-      #     scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \
-      #       docker-compose.yml \
-      #       ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/docker-compose.yml
+      - name: Deploy to EC2 via SSH
+        run: |
+          # Copia o arquivo docker-compose.yml para um diretório temporário no servidor
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa docker-compose.yml \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/docker-compose.yml
 
       #     # Executa os comandos de deploy no servidor remoto
       #     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \

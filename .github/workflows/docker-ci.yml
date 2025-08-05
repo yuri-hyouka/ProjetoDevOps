@@ -103,9 +103,9 @@ jobs:
           # Executa os comandos de deploy no servidor remoto
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-              mkdir -p /home/ubuntu/app
-              mv /tmp/docker-compose.yml /home/ubuntu/app/docker-compose.yml
-              cd /home/ubuntu/app
+              mkdir -p /home/admin/app
+              mv /tmp/docker-compose.yml /home/admin/app/docker-compose.yml
+              cd /home/admin/app
               docker compose pull
               docker compose up -d
               docker image prune -af

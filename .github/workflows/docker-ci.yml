@@ -96,13 +96,13 @@ jobs:
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa docker-compose.yml \
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/docker-compose.yml
 
-      #     # Executa os comandos de deploy no servidor remoto
-      #     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \
-      #       ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-      #         mkdir -p /home/admin/app
-      #         mv /tmp/docker-compose.yml /home/admin/app/docker-compose.yml
-      #         cd /home/admin/app
-      #         docker compose pull
-      #         docker compose up -d
-      #         docker image prune -af
-      #     EOF
+          # Executa os comandos de deploy no servidor remoto
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            mkdir -p /home/admin/app
+             mv /tmp/docker-compose.yml /home/admin/app/docker-compose.yml
+               cd /home/admin/app
+               sudo docker compose pull
+               sudo docker compose up -d
+               sudo docker image prune -af
+           EOF

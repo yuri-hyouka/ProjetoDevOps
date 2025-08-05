@@ -9,20 +9,20 @@ O objetivo é aplicar conceitos e ferramentas fundamentais de DevOps para constr
 ```mermaid
 graph TD
     subgraph "Ambiente Local"
-        A[<fa:fa-user> Desenvolvedor] -- 1. git push --> B{<fa:fa-github> GitHub Repo};
+        A[<fa:fa-user> Desenvolvedor] -->|1. git push| B{<fa:fa-github> GitHub Repo};
     end
 
     subgraph "Pipeline no GitHub Actions"
-        B -- 2. Aciona Workflow --> C{<fa:fa-cogs> CI/CD};
-        C -- 3. Job CI --> D[Build, Test & Push];
+        B -->|2. Aciona Workflow| C{<fa:fa-cogs> CI/CD};
+        C -->|3. Job CI| D[Build, Test & Push];
         D -- Imagem --> E[<fa:fa-docker> Docker Hub];
-        C -- 4. Job CD (needs CI) --> F[Deploy via SSH];
+        C -->|4. Job CD (needs CI)| F[Deploy via SSH];
     end
 
     subgraph "Nuvem AWS"
-        F -- 5. Executa comandos --> G[<fa:fa-server> Instância EC2];
-        G -- 6. docker compose pull --> E;
-        G -- 7. docker compose up --> H[<fa:fa-flask> App] & I[<fa:fa-database> Redis];
+        F -->|5. Executa comandos| G[<fa:fa-server> Instância EC2];
+        G -->|6. docker compose pull| E;
+        G -->|7. docker compose up| H[<fa:fa-flask> App] & I[<fa:fa-database> Redis];
     end
 ```
 

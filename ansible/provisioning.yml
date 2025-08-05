@@ -3,10 +3,3 @@
   become: yes
   roles:
     - docker
-
-
-- hosts: localhost
-  connection: local
-  become: yes
-  roles:
-    - docker

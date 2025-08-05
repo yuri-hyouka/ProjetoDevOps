@@ -55,10 +55,9 @@ Projeto DevOps: Infraestrutura Completa com Terraform, Ansible, Docker, Python e
 
 6 - GITHUB ACTIONS(CD)
     - A responsabilidade do seu playbook do Ansible, que é a etapa de deploy, é:
-    - Conectar-se ao seu servidor EC2.
-    - Copiar o arquivo docker-compose.yml do seu repositório para o servidor.
-    - Instalar o Docker no servidor.
-    - Executar docker-compose up.
-
-
-    
+a    - O job de deploy é acionado após o sucesso do CI.
+    - Ele se conecta diretamente ao servidor EC2 via SSH.
+    - Copia o arquivo `docker-compose.yml` para o servidor.
+    - Executa `docker compose pull` para baixar a imagem mais recente do Docker Hub.
+    - Executa `docker compose up -d` para iniciar a aplicação.
+    - O Ansible é usado apenas para o provisionamento inicial do servidor (instalação do Docker).

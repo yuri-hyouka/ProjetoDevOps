@@ -73,3 +73,37 @@ jobs:
         # Este passo só roda se o passo de teste for bem-sucedido
         if: success()
         run: docker push --all-tags yuripaixao/hc-devops
+
+  deploy:
+    runs-on: ubuntu-latest
+    # Garante que este job só rode após o sucesso do job anterior
+    needs: build-test-and-push
+    name: Deploy to EC2
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configure SSH Key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      
+      - name: Deploy to EC2 via SSH
+        run: |
+          # Copia o arquivo docker-compose.yml para um diretório temporário no servidor
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \
+            docker-compose.yml \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/docker-compose.yml
+
+          # Executa os comandos de deploy no servidor remoto
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              mkdir -p /home/ubuntu/app
+              mv /tmp/docker-compose.yml /home/ubuntu/app/docker-compose.yml
+              cd /home/ubuntu/app
+              docker compose pull
+              docker compose up -d
+              docker image prune -af
+          EOF
